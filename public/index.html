@@ -393,6 +393,9 @@
         <div class="toolbar-left">
           <button class="btn btn-success" onclick="openAdd()">＋ 新增</button>
           <button class="btn btn-danger"  onclick="batchDelete()">🗑 批量删除</button>
+          <button class="btn btn-default" onclick="downloadTemplate()">⬇ 下载模板</button>
+          <button class="btn btn-primary" onclick="document.getElementById('importFileInput').click()">📥 导入 Excel</button>
+          <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)" />
         </div>
         <div class="stats">
           已选 <strong id="selectedCount">0</strong> 条 &nbsp;|&nbsp; 共
@@ -705,6 +708,38 @@
       loadData(isEdit ? currentPage : 1);
     } catch (e) {
       showToast(e.message || '操作失败', 'error');
+    }
+  }
+
+  // =================== 下载模板 ===================
+  function downloadTemplate() {
+    window.location.href = '/api/rule-config/template';
+  }
+
+  // =================== 导入 Excel ===================
+  async function importExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = ''; // 重置，允许重复上传同一文件
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    showToast('正在导入，请稍候...', 'info');
+    try {
+      const res = await fetch('/api/rule-config/import', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (json.code !== 0) throw new Error(json.message);
+
+      let msg = json.message;
+      if (json.errors && json.errors.length) {
+        msg += '\n' + json.errors.slice(0, 5).join('\n');
+        if (json.errors.length > 5) msg += `\n...共 ${json.errors.length} 个错误`;
+      }
+      showToast(msg, json.failed > 0 ? 'info' : 'success');
+      loadData(1);
+    } catch (e) {
+      showToast(e.message || '导入失败', 'error');
     }
   }
 
