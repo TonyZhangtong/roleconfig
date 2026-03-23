@@ -43,6 +43,16 @@ app.delete('/api/rule-config/batch', async (req, res) => {
   }
 });
 
+// 清空所有配置（必须在 /:id 路由之前注册）
+app.delete('/api/rule-config/clear-all', async (req, res) => {
+  try {
+    const deleted = await db.clearAll();
+    res.json({ code: 0, message: `已清空 ${deleted} 条记录`, deleted });
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
 // 下载导入模板（必须在 /:id 路由之前注册）
 app.get('/api/rule-config/template', (req, res) => {
   const headers = [
@@ -62,6 +72,44 @@ app.get('/api/rule-config/template', (req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename="rule_config_template.xlsx"');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buf);
+});
+
+// 导出所有配置（必须在 /:id 路由之前注册）
+app.get('/api/rule-config/export', async (req, res) => {
+  try {
+    const rows = await db.getAll();
+    const headers = [
+      'SCN_CID', 'RUL_MAJ', 'RUL_CAT', 'RUL_CAT_NAM_EXP',
+      'COND_TYP', 'INTV_LWR_BND', 'INTV_UPR_BND', 'MTCH_VAL', 'SCR_VAL'
+    ];
+    const data = rows.map(r => [
+      r.SCN_CID || '',
+      r.RUL_MAJ || '',
+      r.RUL_CAT || '',
+      r.RUL_CAT_NAM_EXP || '',
+      r.COND_TYP || '',
+      r.INTV_LWR_BND ?? '',
+      r.INTV_UPR_BND ?? '',
+      r.MTCH_VAL || '',
+      r.SCR_VAL ?? ''
+    ]);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    // 设置列宽（与模板一致）
+    ws['!cols'] = [16,16,16,30,12,16,16,16,12].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws, '规则配置');
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    // 生成带时间戳的文件名
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const filename = `rule_config_export_${timestamp}.xlsx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ code: 500, message: err.message });
+  }
 });
 
 // Excel 批量导入（必须在 /:id 路由之前注册）

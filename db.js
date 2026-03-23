@@ -105,4 +105,14 @@ async function batchRemove(ids) {
   return result.affectedRows;
 }
 
-module.exports = { pool, getList, getById, insert, update, remove, batchRemove };
+async function clearAll() {
+  const [result] = await pool.query('DELETE FROM rule_config');
+  return result.affectedRows;
+}
+
+async function getAll() {
+  const [data] = await pool.query('SELECT * FROM rule_config ORDER BY ID ASC');
+  return data;
+}
+
+module.exports = { pool, getList, getById, insert, update, remove, batchRemove, clearAll, getAll };
