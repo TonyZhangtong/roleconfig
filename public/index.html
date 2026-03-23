@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>规则配置维护</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ===== 顶部导航 ===== */
+    .topbar {
+      background: linear-gradient(135deg, #1a3c6e 0%, #2563a8 100%);
+      color: #fff;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar .logo { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .topbar .sub  { font-size: 13px; opacity: .75; }
+
+    /* ===== 主内容区 ===== */
+    .main { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
+
+    /* ===== 卡片 ===== */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.08);
+      margin-bottom: 16px;
+    }
+    .card-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a3c6e;
+    }
+    .card-header .icon { font-size: 17px; }
+    .card-body { padding: 16px 20px; }
+
+    /* ===== 搜索区 ===== */
+    .search-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; color: #666; }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1px solid #d9d9d9;
+      border-radius: 5px;
+      padding: 7px 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s;
+      background: #fff;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #2563a8;
+      box-shadow: 0 0 0 2px rgba(37,99,168,.12);
+    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+
+    .btn-row {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ===== 按钮 ===== */
+    .btn {
+      padding: 7px 18px;
+      border: none;
+      border-radius: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary   { background: #2563a8; color: #fff; }
+    .btn-success   { background: #18a058; color: #fff; }
+    .btn-warning   { background: #f0a020; color: #fff; }
+    .btn-danger    { background: #d03050; color: #fff; }
+    .btn-default   { background: #fff; color: #555; border: 1px solid #d9d9d9; }
+    .btn-sm { padding: 4px 11px; font-size: 12px; }
+
+    /* ===== 操作工具栏 ===== */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .toolbar-left { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ===== 表格 ===== */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead tr { background: #f5f7fa; }
+    thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #555;
+      white-space: nowrap;
+      border-bottom: 2px solid #e8e8e8;
+    }
+    tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+    tbody tr:hover { background: #f8faff; }
+    tbody td {
+      padding: 9px 12px;
+      vertical-align: middle;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    tbody td.wrap { white-space: normal; word-break: break-all; }
+    .td-op { white-space: nowrap; display: flex; gap: 6px; }
+
+    /* ===== 空态 ===== */
+    .empty {
+      text-align: center;
+      padding: 40px 0;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    /* ===== 分页 ===== */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .pagination span { font-size: 13px; color: #666; }
+    .page-btn {
+      width: 30px; height: 30px;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+    .page-btn:hover, .page-btn.active {
+      background: #2563a8;
+      color: #fff;
+      border-color: #2563a8;
+    }
+    .page-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .page-size-select {
+      padding: 4px 8px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    /* ===== 标签 ===== */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tag-blue   { background: #e6f0ff; color: #2563a8; }
+    .tag-green  { background: #e6f9f0; color: #18a058; }
+    .tag-orange { background: #fff3e0; color: #e07800; }
+
+    /* ===== 模态框 ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 10px;
+      width: 680px;
+      max-width: calc(100vw - 32px);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+      animation: modalIn .2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(.93) translateY(-12px); }
+      to   { opacity: 1; transform: scale(1)  translateY(0); }
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; color: #1a3c6e; }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all .15s;
+    }
+    .modal-close:hover { background: #f0f0f0; color: #333; }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ===== 表单网格 ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 20px;
+    }
+    .form-grid .span2 { grid-column: span 2; }
+    .required::after { content: ' *'; color: #d03050; }
+
+    /* ===== 消息提示 ===== */
+    #toast-container {
+      position: fixed;
+      top: 70px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #fff;
+      min-width: 200px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      animation: toastIn .25s ease;
+    }
+    .toast.success { background: #18a058; }
+    .toast.error   { background: #d03050; }
+    .toast.info    { background: #2563a8; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+    /* ===== 确认框 ===== */
+    .confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+    }
+    .confirm-overlay.show { display: flex; }
+    .confirm-box {
+      background: #fff;
+      border-radius: 8px;
+      padding: 28px 32px;
+      width: 340px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.18);
+      text-align: center;
+    }
+    .confirm-icon { font-size: 40px; margin-bottom: 12px; }
+    .confirm-msg { font-size: 15px; color: #333; margin-bottom: 20px; line-height: 1.5; }
+    .confirm-btns { display: flex; justify-content: center; gap: 14px; }
+
+    /* ===== Loading ===== */
+    .loading-mask {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 8px;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #e0e7ef;
+      border-top-color: #2563a8;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .table-container { position: relative; }
+    .checkbox-col { width: 36px; text-align: center; }
+    input[type="checkbox"] { accent-color: #2563a8; width: 14px; height: 14px; cursor: pointer; }
+
+    .stats { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #666; }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .span2 { grid-column: span 1; }
+      .topbar .sub { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topbar">
+  <div class="logo">⚙️ 规则配置维护系统</div>
+  <div class="sub">rule_config 表管理</div>
+</div>
+
+<div class="main">
+
+  <!-- 搜索条件区 -->
+  <div class="card">
+    <div class="card-header"><span class="icon">🔍</span> 条件筛选</div>
+    <div class="card-body">
+      <div class="search-grid">
+        <div class="form-group">
+          <label>场景分类ID（SCN_CID）</label>
+          <input id="s_scnCid" type="text" placeholder="请输入场景分类ID" />
+        </div>
+        <div class="form-group">
+          <label>规则大类（RUL_MAJ）</label>
+          <input id="s_rulMaj" type="text" placeholder="请输入规则大类" />
+        </div>
+        <div class="form-group">
+          <label>规则类别（RUL_CAT）</label>
+          <input id="s_rulCat" type="text" placeholder="请输入规则类别" />
+        </div>
+        <div class="form-group">
+          <label>条件类型（COND_TYP）</label>
+          <input id="s_condTyp" type="text" placeholder="请输入条件类型" />
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="loadData(1)">🔍 查询</button>
+        <button class="btn btn-default" onclick="resetSearch()">↩ 重置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 表格区 -->
+  <div class="card">
+    <div class="card-header"><span class="icon">📋</span> 规则配置列表</div>
+    <div class="card-body">
+      <!-- 工具栏 -->
+      <div class="toolbar" style="margin-bottom:14px;">
+        <div class="toolbar-left">
+          <button class="btn btn-success" onclick="openAdd()">＋ 新增</button>
+          <button class="btn btn-danger"  onclick="batchDelete()">🗑 批量删除</button>
+        </div>
+        <div class="stats">
+          已选 <strong id="selectedCount">0</strong> 条 &nbsp;|&nbsp; 共
+          <strong id="totalCount">0</strong> 条
+        </div>
+      </div>
+
+      <!-- 表格 -->
+      <div class="table-container" id="tableContainer">
+        <div class="table-wrap">
+          <table id="mainTable">
+            <thead>
+              <tr>
+                <th class="checkbox-col"><input type="checkbox" id="checkAll" onchange="toggleAll(this)" /></th>
+                <th>ID</th>
+                <th>场景分类ID</th>
+                <th>规则大类</th>
+                <th>规则类别</th>
+                <th>规则类别名称解释</th>
+                <th>条件类型</th>
+                <th>区间下限</th>
+                <th>区间上限</th>
+                <th>匹配值</th>
+                <th>得分值</th>
+                <th>创建时间</th>
+                <th>更新时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr><td colspan="14" class="empty">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== 新增/编辑 模态框 ========== -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">新增规则配置</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId" />
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="required">场景分类ID（SCN_CID）</label>
+          <input id="f_scnCid" type="text" placeholder="请输入场景分类ID" />
+        </div>
+        <div class="form-group">
+          <label>规则大类（RUL_MAJ）</label>
+          <input id="f_rulMaj" type="text" placeholder="请输入规则大类" />
+        </div>
+        <div class="form-group">
+          <label>规则类别（RUL_CAT）</label>
+          <input id="f_rulCat" type="text" placeholder="请输入规则类别" />
+        </div>
+        <div class="form-group">
+          <label>条件类型（COND_TYP）</label>
+          <input id="f_condTyp" type="text" placeholder="请输入条件类型" />
+        </div>
+        <div class="form-group">
+          <label>区间下限（INTV_LWR_BND）</label>
+          <input id="f_intvLwr" type="number" step="0.01" placeholder="请输入数值" />
+        </div>
+        <div class="form-group">
+          <label>区间上限（INTV_UPR_BND）</label>
+          <input id="f_intvUpr" type="number" step="0.01" placeholder="请输入数值" />
+        </div>
+        <div class="form-group">
+          <label>匹配值（MTCH_VAL）</label>
+          <input id="f_mtchVal" type="text" placeholder="请输入匹配值" />
+        </div>
+        <div class="form-group">
+          <label>得分值（SCR_VAL）</label>
+          <input id="f_scrVal" type="number" step="0.01" placeholder="请输入得分值" />
+        </div>
+        <div class="form-group span2">
+          <label>规则类别名称解释（RUL_CAT_NAM_EXP）</label>
+          <textarea id="f_rulCatNamExp" placeholder="请输入规则类别名称解释" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitForm()">确认保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 确认删除框 ========== -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg" id="confirmMsg">确定要删除吗？</div>
+    <div class="confirm-btns">
+      <button class="btn btn-default" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger"  onclick="doConfirm()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Toast ========== -->
+<div id="toast-container"></div>
+
+<script>
+  const API = '/api/rule-config';
+  let currentPage = 1;
+  let pageSize = 10;
+  let totalCount = 0;
+  let confirmCallback = null;
+
+  // =================== 数据加载 ===================
+  async function loadData(page = 1) {
+    currentPage = page;
+    showLoading(true);
+
+    const params = new URLSearchParams({
+      page: currentPage,
+      pageSize,
+      scnCid:  document.getElementById('s_scnCid').value.trim(),
+      rulMaj:  document.getElementById('s_rulMaj').value.trim(),
+      rulCat:  document.getElementById('s_rulCat').value.trim(),
+      condTyp: document.getElementById('s_condTyp').value.trim(),
+    });
+
+    try {
+      const res = await fetch(`${API}?${params}`);
+      const json = await res.json();
+      if (json.code !== 0) throw new Error(json.message);
+      renderTable(json.data);
+      totalCount = json.total;
+      document.getElementById('totalCount').textContent = totalCount;
+      renderPagination(json.total, json.page, json.pageSize);
+    } catch (e) {
+      showToast(e.message || '加载失败', 'error');
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // =================== 渲染表格 ===================
+  function renderTable(rows) {
+    const tbody = document.getElementById('tableBody');
+    document.getElementById('checkAll').checked = false;
+    document.getElementById('selectedCount').textContent = 0;
+
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="14" class="empty">📭 暂无匹配数据</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => `
+      <tr data-id="${r.ID}">
+        <td class="checkbox-col">
+          <input type="checkbox" class="row-check" value="${r.ID}" onchange="updateSelectedCount()" />
+        </td>
+        <td><span class="tag tag-blue">${r.ID}</span></td>
+        <td title="${r.SCN_CID || ''}">${esc(r.SCN_CID) || '-'}</td>
+        <td title="${r.RUL_MAJ || ''}">${esc(r.RUL_MAJ) || '-'}</td>
+        <td title="${r.RUL_CAT || ''}">${esc(r.RUL_CAT) || '-'}</td>
+        <td class="wrap" title="${r.RUL_CAT_NAM_EXP || ''}">${esc(r.RUL_CAT_NAM_EXP) || '-'}</td>
+        <td title="${r.COND_TYP || ''}">${esc(r.COND_TYP) || '-'}</td>
+        <td>${r.INTV_LWR_BND !== null ? r.INTV_LWR_BND : '-'}</td>
+        <td>${r.INTV_UPR_BND !== null ? r.INTV_UPR_BND : '-'}</td>
+        <td title="${r.MTCH_VAL || ''}">${esc(r.MTCH_VAL) || '-'}</td>
+        <td>${r.SCR_VAL !== null ? `<span class="tag tag-green">${r.SCR_VAL}</span>` : '-'}</td>
+        <td>${formatDate(r.CREATE_TIME)}</td>
+        <td>${formatDate(r.UPDATE_TIME)}</td>
+        <td>
+          <div class="td-op">
+            <button class="btn btn-warning btn-sm" onclick="openEdit(${r.ID})">✏️ 编辑</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${r.ID})">🗑 删除</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // =================== 分页 ===================
+  function renderPagination(total, page, size) {
+    const totalPages = Math.ceil(total / size);
+    const pag = document.getElementById('pagination');
+    if (totalPages <= 1) { pag.innerHTML = ''; return; }
+
+    let html = `<span>共 ${totalPages} 页</span>`;
+    html += `<button class="page-btn" onclick="loadData(1)" ${page===1?'disabled':''}>«</button>`;
+    html += `<button class="page-btn" onclick="loadData(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+
+    const start = Math.max(1, page - 2);
+    const end   = Math.min(totalPages, page + 2);
+    for (let i = start; i <= end; i++) {
+      html += `<button class="page-btn ${i===page?'active':''}" onclick="loadData(${i})">${i}</button>`;
+    }
+
+    html += `<button class="page-btn" onclick="loadData(${page+1})" ${page===totalPages?'disabled':''}>›</button>`;
+    html += `<button class="page-btn" onclick="loadData(${totalPages})" ${page===totalPages?'disabled':''}>»</button>`;
+    html += `<select class="page-size-select" onchange="changePageSize(this.value)">
+      ${[10,20,50,100].map(n=>`<option value="${n}" ${n==size?'selected':''}>${n}条/页</option>`).join('')}
+    </select>`;
+
+    pag.innerHTML = html;
+  }
+
+  function changePageSize(v) {
+    pageSize = parseInt(v);
+    loadData(1);
+  }
+
+  // =================== 搜索重置 ===================
+  function resetSearch() {
+    ['s_scnCid','s_rulMaj','s_rulCat','s_condTyp'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    loadData(1);
+  }
+
+  // =================== 全选 ===================
+  function toggleAll(cb) {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+    updateSelectedCount();
+  }
+
+  function updateSelectedCount() {
+    const cnt = document.querySelectorAll('.row-check:checked').length;
+    document.getElementById('selectedCount').textContent = cnt;
+    const all = document.querySelectorAll('.row-check');
+    document.getElementById('checkAll').indeterminate = cnt > 0 && cnt < all.length;
+    document.getElementById('checkAll').checked = cnt === all.length && all.length > 0;
+  }
+
+  // =================== 新增/编辑 弹窗 ===================
+  function openAdd() {
+    document.getElementById('modalTitle').textContent = '新增规则配置';
+    document.getElementById('editId').value = '';
+    clearForm();
+    document.getElementById('formModal').classList.add('show');
+  }
+
+  async function openEdit(id) {
+    try {
+      const res = await fetch(`${API}/${id}`);
+      const json = await res.json();
+      if (json.code !== 0) throw new Error(json.message);
+      const r = json.data;
+      document.getElementById('modalTitle').textContent = `编辑规则配置 #${id}`;
+      document.getElementById('editId').value        = r.ID;
+      document.getElementById('f_scnCid').value      = r.SCN_CID || '';
+      document.getElementById('f_rulMaj').value      = r.RUL_MAJ || '';
+      document.getElementById('f_rulCat').value      = r.RUL_CAT || '';
+      document.getElementById('f_rulCatNamExp').value= r.RUL_CAT_NAM_EXP || '';
+      document.getElementById('f_condTyp').value     = r.COND_TYP || '';
+      document.getElementById('f_intvLwr').value     = r.INTV_LWR_BND ?? '';
+      document.getElementById('f_intvUpr').value     = r.INTV_UPR_BND ?? '';
+      document.getElementById('f_mtchVal').value     = r.MTCH_VAL || '';
+      document.getElementById('f_scrVal').value      = r.SCR_VAL ?? '';
+      document.getElementById('formModal').classList.add('show');
+    } catch (e) {
+      showToast(e.message || '获取数据失败', 'error');
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('formModal').classList.remove('show');
+  }
+
+  function clearForm() {
+    ['f_scnCid','f_rulMaj','f_rulCat','f_rulCatNamExp',
+     'f_condTyp','f_intvLwr','f_intvUpr','f_mtchVal','f_scrVal']
+    .forEach(id => document.getElementById(id).value = '');
+  }
+
+  async function submitForm() {
+    const scnCid = document.getElementById('f_scnCid').value.trim();
+    if (!scnCid) { showToast('场景分类ID 不能为空', 'error'); return; }
+
+    const body = {
+      SCN_CID:         scnCid,
+      RUL_MAJ:         document.getElementById('f_rulMaj').value.trim(),
+      RUL_CAT:         document.getElementById('f_rulCat').value.trim(),
+      RUL_CAT_NAM_EXP: document.getElementById('f_rulCatNamExp').value.trim(),
+      COND_TYP:        document.getElementById('f_condTyp').value.trim(),
+      INTV_LWR_BND:    document.getElementById('f_intvLwr').value || null,
+      INTV_UPR_BND:    document.getElementById('f_intvUpr').value || null,
+      MTCH_VAL:        document.getElementById('f_mtchVal').value.trim(),
+      SCR_VAL:         document.getElementById('f_scrVal').value || null,
+    };
+
+    const editId = document.getElementById('editId').value;
+    const isEdit = !!editId;
+
+    try {
+      const res = await fetch(isEdit ? `${API}/${editId}` : API, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json();
+      if (json.code !== 0) throw new Error(json.message);
+      showToast(json.message || (isEdit ? '修改成功' : '新增成功'), 'success');
+      closeModal();
+      loadData(isEdit ? currentPage : 1);
+    } catch (e) {
+      showToast(e.message || '操作失败', 'error');
+    }
+  }
+
+  // =================== 删除 ===================
+  function confirmDelete(id) {
+    document.getElementById('confirmMsg').textContent = `确定要删除 ID = ${id} 的记录吗？此操作不可撤销。`;
+    confirmCallback = async () => {
+      try {
+        const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.code !== 0) throw new Error(json.message);
+        showToast('删除成功', 'success');
+        loadData(currentPage);
+      } catch (e) {
+        showToast(e.message || '删除失败', 'error');
+      }
+    };
+    document.getElementById('confirmOverlay').classList.add('show');
+  }
+
+  function batchDelete() {
+    const ids = [...document.querySelectorAll('.row-check:checked')].map(c => parseInt(c.value));
+    if (!ids.length) { showToast('请先选择要删除的记录', 'info'); return; }
+    document.getElementById('confirmMsg').textContent = `确定要删除选中的 ${ids.length} 条记录吗？此操作不可撤销。`;
+    confirmCallback = async () => {
+      try {
+        const res = await fetch(`${API}/batch`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        const json = await res.json();
+        if (json.code !== 0) throw new Error(json.message);
+        showToast(json.message || '批量删除成功', 'success');
+        loadData(1);
+      } catch (e) {
+        showToast(e.message || '批量删除失败', 'error');
+      }
+    };
+    document.getElementById('confirmOverlay').classList.add('show');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirmOverlay').classList.remove('show');
+    confirmCallback = null;
+  }
+
+  function doConfirm() {
+    closeConfirm();
+    if (confirmCallback) confirmCallback();
+  }
+
+  // =================== Loading ===================
+  function showLoading(show) {
+    const container = document.getElementById('tableContainer');
+    let mask = container.querySelector('.loading-mask');
+    if (show) {
+      if (!mask) {
+        mask = document.createElement('div');
+        mask.className = 'loading-mask';
+        mask.innerHTML = '<div class="spinner"></div>';
+        container.appendChild(mask);
+      }
+    } else {
+      if (mask) mask.remove();
+    }
+  }
+
+  // =================== Toast ===================
+  function showToast(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .4s'; }, 2500);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  // =================== 工具函数 ===================
+  function esc(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+
+  function formatDate(dt) {
+    if (!dt) return '-';
+    const d = new Date(dt);
+    if (isNaN(d)) return dt;
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  // 键盘关闭弹窗
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeConfirm(); }
+  });
+
+  // 初始加载
+  loadData(1);
+</script>
+</body>
+</html>

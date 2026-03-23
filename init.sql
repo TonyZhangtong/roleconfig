@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `rule_config` (
+  `ID`            int            NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `SCN_CID`       varchar(250)   DEFAULT NULL             COMMENT '场景分类ID',
+  `RUL_MAJ`       varchar(500)   DEFAULT NULL             COMMENT '规则大类',
+  `RUL_CAT`       varchar(500)   DEFAULT NULL             COMMENT '规则类别',
+  `RUL_CAT_NAM_EXP` varchar(1000) DEFAULT NULL            COMMENT '规则类别名称解释',
+  `COND_TYP`      varchar(500)   DEFAULT NULL             COMMENT '条件类型',
+  `INTV_LWR_BND`  decimal(38,2)  DEFAULT NULL             COMMENT '区间下限',
+  `INTV_UPR_BND`  decimal(38,2)  DEFAULT NULL             COMMENT '区间上限',
+  `MTCH_VAL`      varchar(500)   DEFAULT NULL             COMMENT '匹配值',
+  `SCR_VAL`       decimal(38,2)  DEFAULT NULL             COMMENT '得分值',
+  `CREATE_TIME`   datetime       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '创建时间',
+  `UPDATE_TIME`   datetime       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`ID`),
+  KEY `idx_scn_cid`  (`SCN_CID`),
+  KEY `idx_rul_maj`  (`RUL_MAJ`),
+  KEY `idx_rul_cat`  (`RUL_CAT`),
+  KEY `idx_create`   (`CREATE_TIME`),
+  KEY `idx_update`   (`UPDATE_TIME`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='规则配置表，用于存储业务规则配置信息';

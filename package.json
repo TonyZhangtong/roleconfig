@@ -1,0 +1,15 @@
+{
+  "name": "rule-config-manager",
+  "version": "1.0.0",
+  "description": "规则配置维护系统（MySQL数据库）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mysql2": "^3.20.0"
+  }
+}
